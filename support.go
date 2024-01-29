@@ -4,9 +4,11 @@
 
 package later
 
-import "sync/atomic"
+import (
+	"sync/atomic"
+)
 
-type reportFunc func(format string, args ...interface{})
+type ReportFunc func(string, ...interface{})
 
 func callRemote(remote, format string, args ...interface{}) {
 
@@ -19,8 +21,11 @@ func callRemote(remote, format string, args ...interface{}) {
 	}
 
 	if target, found := registry[remote]; found && target != nil {
-		if operation, compliant := target.(reportFunc); compliant && operation != nil {
+
+		switch operation := target.(type) {
+		case func(string, ...interface{}):
 			operation(format, args...)
+		default:
 		}
 	}
 }
