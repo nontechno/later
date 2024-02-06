@@ -5,35 +5,141 @@
 package later
 
 import (
+	"fmt"
+	"os"
+	"reflect"
 	"sync/atomic"
 )
 
-type ReportFunc func(string, ...interface{})
+func callRemote(remote string, f interface{}, format string, args ...interface{}) bool {
 
-func callRemote(remote, format string, args ...interface{}) {
-
+	// a simple guard against endless recursion ...
 	current := atomic.AddInt32(&remoteCounter, 1)
 	defer atomic.AddInt32(&remoteCounter, -1)
-
-	if current > 12 {
+	if current > maxDepth {
 		// this is too deep - most likely an endless recursion
-		return
+		return false
 	}
 
-	if target, found := registry[remote]; found && target != nil {
+	fullName := getFullname(remote, getSignature(f))
+	if target, found := registry[fullName]; found && target != nil {
 
 		switch operation := target.(type) {
 		case func(string, ...interface{}):
 			operation(format, args...)
+			return true
 		default:
 		}
 	}
+	return false
 }
 
+// default (non-overwritten) version of "onReport" function
+func localOnReport(format string, args ...interface{}) {
+	callRemote(ReportFunc, localOnReport, format, args...)
+}
+
+// default (non-overwritten) version of "onWarning" function
 func localOnWarning(format string, args ...interface{}) {
-	callRemote("warning", format, args...)
+	callRemote(WarningFunc, localOnWarning, format, args...)
 }
 
+// default (non-overwritten) version of "onError" function
 func localOnError(format string, args ...interface{}) {
-	callRemote("error", format, args...)
+	if !callRemote(ErrorFunc, localOnError, format, args...) {
+		// there was no overload - let's 'report' something before quitting
+		fmt.Fprintf(os.Stderr, "Error: "+format+"\nQuitting...", args...)
+	}
+	// force exit, since this is an error
+	onTerminate()
+}
+
+func localOnTerminate() {
+
+	// a simple guard against endless recursion ...
+	current := atomic.AddInt32(&remoteCounter, 1)
+	defer atomic.AddInt32(&remoteCounter, -1)
+	if current <= maxDepth {
+
+		fullName := getFullname(TerminateFunc, getSignature(localOnTerminate))
+		if target, found := registry[fullName]; found && target != nil {
+
+			switch operation := target.(type) {
+			case func():
+				operation()
+			default:
+			}
+		}
+	}
+
+	// no over-write was found, just quit
+	// force exit, since this is an error
+	os.Exit(100)
+}
+
+/*
+// returns 'true' (if `what` is a func) and number of returns
+func isFunc(what interface{}) (bool, int) {
+	if what != nil {
+		t := reflect.TypeOf(what)
+		for t.Kind() == reflect.Pointer {
+			t = t.Elem()
+		}
+		if t.Kind() == reflect.Func {
+			return true, t.NumOut()
+		}
+	}
+	return false, 0
+}
+*/
+
+// returns 'true' (if `what` is a pointer) and what it points to
+func isPointer(what interface{}) (bool, reflect.Type) {
+	if what != nil {
+		var t reflect.Type
+		if tt, okay := what.(reflect.Type); okay {
+			t = tt
+		} else {
+			t = reflect.TypeOf(what)
+		}
+
+		if t.Kind() == reflect.Pointer {
+			return true, t.Elem()
+		}
+	}
+	return false, nil
+}
+
+func isFunction(what interface{}) (bool, int) {
+	if what != nil {
+		var t reflect.Type
+		if tt, okay := what.(reflect.Type); okay {
+			t = tt
+		} else {
+			t = reflect.TypeOf(what)
+		}
+
+		if t.Kind() == reflect.Func {
+			return true, t.NumOut()
+		}
+	}
+	return false, 0
+}
+
+func getSignature(what interface{}) string {
+	if what != nil {
+		var t reflect.Type
+		if tt, okay := what.(reflect.Type); okay {
+			t = tt
+		} else {
+			t = reflect.TypeOf(what)
+		}
+
+		return t.String()
+	}
+	return "nil"
+}
+
+func getFullname(name, signature string) string {
+	return name + separator + signature
 }
