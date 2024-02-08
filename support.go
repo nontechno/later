@@ -14,8 +14,8 @@ import (
 func callRemote(remote string, f interface{}, format string, args ...interface{}) bool {
 
 	// a simple guard against endless recursion ...
-	current := atomic.AddInt32(&remoteCounter, 1)
-	defer atomic.AddInt32(&remoteCounter, -1)
+	current := remoteCounter.Add()
+	defer remoteCounter.Remove()
 	if current > maxDepth {
 		// this is too deep - most likely an endless recursion
 		return false
@@ -56,8 +56,8 @@ func localOnError(format string, args ...interface{}) {
 func localOnTerminate() {
 
 	// a simple guard against endless recursion ...
-	current := atomic.AddInt32(&remoteCounter, 1)
-	defer atomic.AddInt32(&remoteCounter, -1)
+	current := remoteCounter.Add()
+	defer remoteCounter.Remove()
 	if current <= maxDepth {
 
 		if target, found := getRegistered(TerminateFunc, getSignature(localOnTerminate)); found && target != nil {
@@ -124,4 +124,15 @@ func getSignature(what interface{}) string {
 
 func getFullname(name, signature string) string {
 	return name + separator + signature
+}
+
+type Counter int32
+
+func (c *Counter) Add() int {
+	current := atomic.AddInt32((*int32)(c), 1)
+	return int(current)
+}
+
+func (c *Counter) Remove() {
+	atomic.AddInt32((*int32)(c), -1)
 }

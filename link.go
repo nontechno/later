@@ -6,7 +6,6 @@ package later
 
 import (
 	"reflect"
-	"sync/atomic"
 )
 
 func Link(fptr interface{}, linkage string, fallback interface{}) {
@@ -31,8 +30,8 @@ func Link(fptr interface{}, linkage string, fallback interface{}) {
 	universal := func(args []reflect.Value) []reflect.Value {
 
 		// a simple guard against an endless recursion
-		current := atomic.AddInt32(&entryCounter, 1)
-		defer atomic.AddInt32(&entryCounter, -1)
+		current := entryCounter.Add()
+		defer entryCounter.Remove()
 		if current > maxDepth {
 			onError("too many hops (%v) to resolve linkage (%s)", current, linkage)
 			return []reflect.Value{}

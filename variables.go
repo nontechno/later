@@ -15,6 +15,6 @@ var (
 	onError       = localOnError
 	onReport      = localOnReport
 	onTerminate   = localOnTerminate
-	entryCounter  int32
-	remoteCounter int32
+	entryCounter  Counter
+	remoteCounter Counter
 )
