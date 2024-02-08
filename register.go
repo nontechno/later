@@ -25,9 +25,7 @@ func Register(f interface{}, linkages ...string) {
 	defer guard.Unlock()
 
 	for _, linkage := range linkages {
-		fullName := getFullname(linkage, signature)
-
-		if entry, found := registry[fullName]; found && entry != nil {
+		if entry, found := getRegistered(linkage, signature); found && entry != nil {
 			onWarning("entry (%s) already set/exists", linkage)
 			return
 		}
@@ -38,13 +36,13 @@ func Register(f interface{}, linkages ...string) {
 		}
 		onReport(msg)
 
-		registry[fullName] = f
+		setRegistered(linkage, signature, f)
 	}
 }
 
-func resolve(fn reflect.Value, linkage string) interface{} {
+func resolve(fn reflect.Value, linkage, signature string) interface{} {
 
-	target, found := registry[linkage]
+	target, found := getRegistered(linkage, signature)
 	if !found {
 		onWarning("entry (%s) not found", linkage)
 		return nil
@@ -54,4 +52,24 @@ func resolve(fn reflect.Value, linkage string) interface{} {
 	fn.Set(arg)
 
 	return target
+}
+
+func getRegistered(name, signature string) (interface{}, bool) {
+	fullName := getFullname(name, signature)
+	if len(signature) == 0 {
+		fullName = name
+	}
+
+	if target, found := registry[fullName]; found && target != nil {
+		return target, found
+	}
+	return nil, false
+}
+
+func setRegistered(name, signature string, f interface{}) {
+	fullName := getFullname(name, signature)
+	if len(signature) == 0 {
+		fullName = name
+	}
+	registry[fullName] = f
 }

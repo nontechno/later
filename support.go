@@ -21,8 +21,7 @@ func callRemote(remote string, f interface{}, format string, args ...interface{}
 		return false
 	}
 
-	fullName := getFullname(remote, getSignature(f))
-	if target, found := registry[fullName]; found && target != nil {
+	if target, found := getRegistered(remote, getSignature(f)); found && target != nil {
 
 		switch operation := target.(type) {
 		case func(string, ...interface{}):
@@ -61,8 +60,7 @@ func localOnTerminate() {
 	defer atomic.AddInt32(&remoteCounter, -1)
 	if current <= maxDepth {
 
-		fullName := getFullname(TerminateFunc, getSignature(localOnTerminate))
-		if target, found := registry[fullName]; found && target != nil {
+		if target, found := getRegistered(TerminateFunc, getSignature(localOnTerminate)); found && target != nil {
 
 			switch operation := target.(type) {
 			case func():
@@ -74,24 +72,8 @@ func localOnTerminate() {
 
 	// no over-write was found, just quit
 	// force exit, since this is an error
-	os.Exit(100)
+	os.Exit(onErrorExitCode)
 }
-
-/*
-// returns 'true' (if `what` is a func) and number of returns
-func isFunc(what interface{}) (bool, int) {
-	if what != nil {
-		t := reflect.TypeOf(what)
-		for t.Kind() == reflect.Pointer {
-			t = t.Elem()
-		}
-		if t.Kind() == reflect.Func {
-			return true, t.NumOut()
-		}
-	}
-	return false, 0
-}
-*/
 
 // returns 'true' (if `what` is a pointer) and what it points to
 func isPointer(what interface{}) (bool, reflect.Type) {

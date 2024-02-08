@@ -38,8 +38,7 @@ func Link(fptr interface{}, linkage string, fallback interface{}) {
 			return []reflect.Value{}
 		}
 
-		fullName := getFullname(linkage, signature)
-		if target := resolve(fn, fullName); target != nil {
+		if target := resolve(fn, linkage, signature); target != nil {
 			onReport("resolved linkage (%s)", linkage)
 			return reflect.ValueOf(target).Call(args) // this can be a chain call
 		} else {

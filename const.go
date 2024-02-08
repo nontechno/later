@@ -10,6 +10,7 @@ const (
 	ErrorFunc     = "error"
 	TerminateFunc = "terminate"
 
-	maxDepth  = 12
-	separator = "\u0000"
+	maxDepth        = 12
+	separator       = "\u0000"
+	onErrorExitCode = 100
 )
