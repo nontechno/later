@@ -21,8 +21,8 @@ func Register(f interface{}, linkages ...string) {
 		onError("supplied parameter is not a function (%v, %s)", f, signature)
 	}
 
-	guard.Lock()
-	defer guard.Unlock()
+	registryGuard.Lock()
+	defer registryGuard.Unlock()
 
 	for _, linkage := range linkages {
 		if entry, found := getRegistered(linkage, signature); found && entry != nil {
@@ -60,7 +60,7 @@ func getRegistered(name, signature string) (interface{}, bool) {
 		fullName = name
 	}
 
-	if target, found := registry[fullName]; found && target != nil {
+	if target, found := registryStore[fullName]; found && target != nil {
 		return target, found
 	}
 	return nil, false
@@ -71,5 +71,5 @@ func setRegistered(name, signature string, f interface{}) {
 	if len(signature) == 0 {
 		fullName = name
 	}
-	registry[fullName] = f
+	registryStore[fullName] = f
 }

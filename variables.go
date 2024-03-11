@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	guard         sync.Mutex
-	registry      = map[string]interface{}{}
+	registryGuard sync.RWMutex
+	registryStore = map[string]interface{}{}
 	onWarning     = localOnWarning
 	onError       = localOnError
 	onReport      = localOnReport

@@ -57,6 +57,8 @@ func TestWarning(t *testing.T) {
 	defer func() {
 		if recover() != nil {
 			t.Logf("catching termination...\n")
+
+			report(t)
 		}
 	}()
 
@@ -83,4 +85,15 @@ func TestWarning(t *testing.T) {
 
 	other()
 	another()
+}
+
+func report(t *testing.T) {
+	t.Logf("------------------------------ here is what's available:\n")
+	for _, entry := range Available() {
+		t.Logf("\t%v\n", entry.Name)
+		t.Logf("\t%v\n", entry.Signature)
+		t.Logf("\t%v\n", entry.Func)
+		t.Logf("\t%v\n", entry.File)
+		t.Logf("\t%v\n", entry.Line)
+	}
 }

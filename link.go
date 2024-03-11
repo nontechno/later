@@ -29,7 +29,7 @@ func Link(fptr interface{}, linkage string, fallback interface{}) {
 
 	universal := func(args []reflect.Value) []reflect.Value {
 
-		// a simple guard against an endless recursion
+		// a simple registryGuard against an endless recursion
 		current := entryCounter.Add()
 		defer entryCounter.Remove()
 		if current > maxDepth {

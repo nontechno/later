@@ -13,7 +13,7 @@ import (
 
 func callRemote(remote string, f interface{}, format string, args ...interface{}) bool {
 
-	// a simple guard against endless recursion ...
+	// a simple registryGuard against endless recursion ...
 	current := remoteCounter.Add()
 	defer remoteCounter.Remove()
 	if current > maxDepth {
@@ -55,7 +55,7 @@ func localOnError(format string, args ...interface{}) {
 
 func localOnTerminate() {
 
-	// a simple guard against endless recursion ...
+	// a simple registryGuard against endless recursion ...
 	current := remoteCounter.Add()
 	defer remoteCounter.Remove()
 	if current <= maxDepth {

@@ -11,6 +11,8 @@ const (
 	TerminateFunc = "terminate"
 
 	maxDepth        = 12
-	separator       = "\u0000"
 	onErrorExitCode = 100
+	packageName     = "later"
+
+	separator = "\u0000"
 )
